@@ -13,10 +13,19 @@ interface User {
 interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   logout: () => void
   loading: boolean
   isAuthenticated: boolean
+}
+
+interface RegisterData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  institution: string
+  acceptTerms?: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -52,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Token is invalid, remove it
       localStorage.removeItem('token')
       delete axios.defaults.headers.common['Authorization']
+      setUser(null) // Explicitly set user to null
     } finally {
       setLoading(false)
     }
@@ -74,9 +84,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (data: RegisterData) => {
     try {
-      const response = await axios.post('/api/auth/register', { name, email, password })
+      const response = await axios.post('/api/auth/register', {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        institution: data.institution,
+        acceptTerms: data.acceptTerms
+      })
       const { token, user } = response.data
 
       localStorage.setItem('token', token)

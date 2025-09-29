@@ -23,7 +23,7 @@ import analyticsRoutes from './routes/analytics';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env['PORT'] || 3000;
 
 // Security middleware
 app.use(helmet({
@@ -31,14 +31,14 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+  origin: process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3001',
   credentials: true,
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env['RATE_LIMIT_WINDOW_MS'] || '900000'), // 15 minutes
+  max: parseInt(process.env['RATE_LIMIT_MAX_REQUESTS'] || '100'), // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use('/api/', limiter);
@@ -62,7 +62,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env['NODE_ENV'] || 'development'
   });
 });
 
@@ -104,7 +104,7 @@ process.on('SIGINT', async () => {
 // Start server
 const server = app.listen(PORT, () => {
   logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`📚 Environment: ${process.env['NODE_ENV'] || 'development'}`);
   
   // Initialize file watcher service
   const fileWatcher = new FileWatcherService();

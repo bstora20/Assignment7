@@ -34,7 +34,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-secondary-900">
-                Welcome back, {user?.name}
+                Welcome back, {user?.firstName} {user?.lastName}
               </h1>
               <p className="mt-1 text-secondary-600">
                 Manage your student support assistants and view analytics

@@ -5,18 +5,39 @@ export function cn(...classes: (string | undefined | null | boolean)[]): string 
 }
 
 export function formatDate(date: string | Date): string {
+  if (!date) {
+    return 'No date'
+  }
+  
+  const dateObj = new Date(date)
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid date'
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date))
+  }).format(dateObj)
 }
 
 export function formatRelativeTime(date: string | Date): string {
+  if (!date) {
+    return 'No date'
+  }
+  
   const now = new Date()
   const target = new Date(date)
+  
+  // Check if date is valid
+  if (isNaN(target.getTime())) {
+    return 'Invalid date'
+  }
+  
   const diffInSeconds = Math.floor((now.getTime() - target.getTime()) / 1000)
 
   if (diffInSeconds < 60) {
