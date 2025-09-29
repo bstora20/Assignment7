@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assistants Assistant[]
+  testRuns   TestRun[]
+  
+  @@map("users")
+}
+
+model Assistant {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  greeting    String
+  branding    Json            // Store colors, logo, etc.
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  // Relations
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents   Document[]
+  conversations Conversation[]
+  testRuns    TestRun[]
+  analytics   Analytics[]
+  
+  @@map("assistants")
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  content     String       @db.LongText
+  metadata    Json         // Store extracted metadata
+  checksum    String       // For detecting changes
+  isProcessed Boolean      @default(false)
+  lastModified DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  assistantId String
+  assistant   Assistant    @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  
+  @@map("documents")
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  sessionId   String    @unique
+  studentId   String?   // Anonymous by default
+  isActive    Boolean   @default(true)
+  metadata    Json      // Store IP, user agent, etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  assistantId String
+  assistant   Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  
+  @@map("conversations")
+}
+
+model Message {
+  id           String      @id @default(cuid())
+  content      String      @db.Text
+  role         MessageRole
+  metadata     Json        // Store citations, confidence, etc.
+  processingTime Int?      // Response time in ms
+  createdAt    DateTime    @default(now())
+  
+  // Relations
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
+model TestRun {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  status      TestStatus @default(PENDING)
+  results     Json       // Store test results
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Relations
+  assistantId String
+  assistant   Assistant  @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  testCases   TestCase[]
+  
+  @@map("test_runs")
+}
+
+model TestCase {
+  id           String         @id @default(cuid())
+  question     String         @db.Text
+  expectedType String?        // Expected response type
+  response     String?        @db.Text
+  score        Float?         // Quality score 0-1
+  passed       Boolean?
+  metadata     Json           // Store citations, processing time, etc.
+  createdAt    DateTime       @default(now())
+  
+  // Relations
+  testRunId    String
+  testRun      TestRun        @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+  
+  @@map("test_cases")
+}
+
+model Analytics {
+  id           String    @id @default(cuid())
+  date         DateTime  @db.Date
+  totalChats   Int       @default(0)
+  totalMessages Int      @default(0)
+  avgResponseTime Float? // In milliseconds
+  topQuestions Json      // Store most frequent questions
+  metadata     Json      // Additional metrics
+  createdAt    DateTime  @default(now())
+  
+  // Relations
+  assistantId  String
+  assistant    Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  
+  @@unique([assistantId, date])
+  @@map("analytics")
+}
+
+model FileWatch {
+  id          String   @id @default(cuid())
+  path        String   @unique
+  assistantId String
+  isActive    Boolean  @default(true)
+  lastScan    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("file_watches")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  isRead      Boolean          @default(false)
+  metadata    Json
+  createdAt   DateTime         @default(now())
+  
+  // Relations
+  userId      String
+  assistantId String?
+  
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  STAFF
+  VIEWER
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum TestStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  DOCUMENT_UPDATED
+  TEST_COMPLETED
+  SYSTEM_ERROR
+  ASSISTANT_CREATED
+}
