@@ -9,6 +9,10 @@ console.log('🚀 Starting Student Support Assistant Backend...');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Simple in-memory user storage for demo (in production, use a real database)
+const users = new Map(); // Map of email -> user data
+const tokens = new Map(); // Map of token -> user data
+
 // Middleware
 app.use(cors({
   origin: 'http://localhost:3001',
@@ -205,21 +209,31 @@ app.post('/api/auth/register', (req, res) => {
     });
   }
 
-  // In a real app, you'd hash the password and save to database
-  // For demo purposes, we'll just return a success response
+  // Create user object
+  const user = {
+    id: Math.floor(Math.random() * 1000),
+    firstName,
+    lastName,
+    email,
+    institution,
+    role: 'staff',
+    createdAt: new Date().toISOString()
+  };
+
+  // Generate token
+  const token = 'demo-jwt-token-' + Math.random().toString(36).substr(2, 9);
+
+  // Store user and token in memory
+  users.set(email, user);
+  tokens.set(token, user);
+
+  console.log('User registered:', { email, firstName, lastName, token: token.substring(0, 20) + '...' });
+
   res.json({
     success: true,
     message: 'Account created successfully! You can now log in.',
-    user: {
-      id: Math.floor(Math.random() * 1000),
-      firstName,
-      lastName,
-      email,
-      institution,
-      role: 'staff',
-      createdAt: new Date().toISOString()
-    },
-    token: 'demo-jwt-token-' + Math.random().toString(36).substr(2, 9)
+    user,
+    token
   });
 });
 
@@ -233,35 +247,68 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 
-  // In a real app, you'd verify credentials against database
-  // For demo purposes, accept any valid email format
-  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({
-      error: 'Invalid email format'
+  // Check if user exists in our in-memory storage
+  const existingUser = users.get(email);
+  if (existingUser) {
+    // User exists, use their data
+    const token = 'demo-jwt-token-' + Math.random().toString(36).substr(2, 9);
+    tokens.set(token, existingUser);
+    
+    console.log('User logged in:', { email, firstName: existingUser.firstName, lastName: existingUser.lastName });
+    
+    res.json({
+      success: true,
+      message: 'Login successful!',
+      user: existingUser,
+      token: token
     });
-  }
+  } else {
+    // User doesn't exist, create a demo user for any valid email
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
 
-  res.json({
-    success: true,
-    message: 'Login successful!',
-    user: {
-      id: 1,
+    const demoUser = {
+      id: Math.floor(Math.random() * 1000),
       firstName: 'Demo',
       lastName: 'User',
       email: email,
-      institution: 'Vanderbilt University',
+      institution: 'Demo Institution',
       role: 'staff',
-      createdAt: '2024-09-29T10:00:00Z'
-    },
-    token: 'demo-jwt-token-' + Math.random().toString(36).substr(2, 9)
-  });
+      createdAt: new Date().toISOString()
+    };
+
+    const token = 'demo-jwt-token-' + Math.random().toString(36).substr(2, 9);
+    users.set(email, demoUser);
+    tokens.set(token, demoUser);
+    
+    console.log('Demo user created and logged in:', { email, firstName: demoUser.firstName, lastName: demoUser.lastName });
+
+    res.json({
+      success: true,
+      message: 'Login successful!',
+      user: demoUser,
+      token: token
+    });
+  }
 });
 
 app.post('/api/auth/logout', (req, res) => {
   res.json({
     success: true,
     message: 'Logged out successfully'
+  });
+});
+
+// Force logout endpoint - invalidates all demo tokens
+app.get('/api/auth/force-logout', (req, res) => {
+  res.json({
+    success: true,
+    message: 'All demo tokens invalidated. Please log in again.',
+    action: 'force_logout'
   });
 });
 
@@ -285,17 +332,24 @@ app.get('/api/auth/me', (req, res) => {
     });
   }
 
+  // Look up user data by token
+  const user = tokens.get(token);
+  if (!user) {
+    return res.status(401).json({
+      error: 'Token not found or expired'
+    });
+  }
+
+  console.log('User data requested for token:', { 
+    token: token.substring(0, 20) + '...', 
+    firstName: user.firstName, 
+    lastName: user.lastName, 
+    email: user.email 
+  });
+
   res.json({
     success: true,
-    user: {
-      id: 1,
-      firstName: 'Demo',
-      lastName: 'User',
-      email: 'demo@university.edu',
-      institution: 'Vanderbilt University',
-      role: 'staff',
-      createdAt: '2024-09-29T10:00:00Z'
-    }
+    user: user
   });
 });
 
@@ -363,6 +417,7 @@ app.use('*', (req, res) => {
       'POST /api/auth/register',
       'POST /api/auth/login',
       'POST /api/auth/logout',
+      'GET /api/auth/force-logout',
       'GET /api/auth/me',
       'POST /api/chat',
       'GET /api/database/test',
