@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
@@ -8,6 +8,8 @@ import { prisma } from '../utils/prisma';
 import { ValidationError, UnauthorizedError } from '../middleware/errorHandler';
 
 const router = express.Router();
+
+const JWT_SECRET = process.env.JWT_SECRET as string; // ensure it's set!
 
 // Validation rules
 const registerValidation = [
@@ -23,6 +25,7 @@ const loginValidation = [
 
 // Register new user
 router.post('/register', registerValidation, asyncHandler(async (req, res) => {
+  console.log('REGISTER BODY:', req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed: ' + errors.array().map(e => e.msg).join(', '));

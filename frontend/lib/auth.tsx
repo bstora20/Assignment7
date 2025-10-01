@@ -84,29 +84,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const register = async (data: RegisterData) => {
-    try {
-      const response = await axios.post('/api/auth/register', {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        password: data.password,
-        institution: data.institution,
-        acceptTerms: data.acceptTerms
-      })
-      const { token, user } = response.data
+// in AuthProvider
+const register = async (data: RegisterData) => {
+  try {
+    const payload = {
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      password: data.password,
+      // send extras only if your backend uses them:
+      // institution: data.institution,
+      // acceptTerms: data.acceptTerms
+    };
 
-      localStorage.setItem('token', token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      setUser(user)
-      
-      toast.success('Registration successful!')
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Registration failed'
-      toast.error(message)
-      throw error
-    }
+    const response = await axios.post('/api/auth/register', payload);
+    const { token, user } = response.data;
+
+    localStorage.setItem('token', token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(user);
+    toast.success('Registration successful!');
+  } catch (error: any) {
+    const message = error.response?.data?.error || 'Registration failed';
+    toast.error(message);
+    throw error;
   }
+};
+
 
   const logout = () => {
     localStorage.removeItem('token')

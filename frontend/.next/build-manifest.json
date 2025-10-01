@@ -11,6 +11,7 @@
     "static/development/_ssgManifest.js"
   ],
   "rootMainFiles": [],
+  "rootMainFilesTree": {},
   "pages": {
     "/": [
       "static/chunks/webpack.js",
@@ -27,20 +28,30 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/assistants/[id]": [
+    "/analytics": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/assistants/[id].js"
+      "static/chunks/pages/analytics.js"
     ],
-    "/auth/login": [
+    "/assistants": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/auth/login.js"
+      "static/chunks/pages/assistants.js"
+    ],
+    "/assistants/new": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/assistants/new.js"
     ],
     "/settings": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/settings.js"
+    ],
+    "/tests": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/tests.js"
     ]
   },
   "ampFirstPages": []

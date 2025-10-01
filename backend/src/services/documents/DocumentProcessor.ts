@@ -3,9 +3,12 @@ import path from 'path';
 import crypto from 'crypto';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
-import xlsx from 'xlsx';
+import ExcelJS from 'exceljs';  
 import { logger } from '../../utils/logger';
 import { prisma } from '../../utils/prisma';
+import { Buffer as NodeBuffer } from 'node:buffer';
+import { Readable } from 'node:stream';
+
 
 export interface ProcessedDocument {
   content: string;
@@ -107,18 +110,47 @@ export class DocumentProcessor {
     return buffer.toString('utf-8');
   }
 
-  private static async processExcel(buffer: Buffer): Promise<string> {
-    const workbook = xlsx.read(buffer, { type: 'buffer' });
-    let content = '';
-    
-    workbook.SheetNames.forEach(sheetName => {
-      const worksheet = workbook.Sheets[sheetName];
-      const csvData = xlsx.utils.sheet_to_csv(worksheet);
-      content += `\n--- Sheet: ${sheetName} ---\n${csvData}\n`;
+private static async processExcel(buffer: Buffer): Promise<string> {
+  const workbook = new ExcelJS.Workbook();
+
+  // ✅ Use stream API to avoid the Buffer/ArrayBuffer typing mess
+  await workbook.xlsx.read(Readable.from(buffer));
+
+  if (workbook.worksheets.length === 0) return '';
+
+  const blocks: string[] = workbook.worksheets.map(ws => {
+    const csv = DocumentProcessor.worksheetToCsv(ws);
+    return `\n--- Sheet: ${ws.name} ---\n${csv}\n`;
+  });
+
+  return blocks.join('');
+}
+
+
+private static worksheetToCsv(ws: ExcelJS.Worksheet): string {
+  const rows: string[] = [];
+
+  ws.eachRow((row) => {
+    // ExcelJS keeps a dummy value at index 0; real cells start from index 1
+    const values = (row.values as any[]).slice(1);
+
+    const escaped = values.map((v) => {
+      if (v == null) return '';
+      const s = String(v);
+      // CSV-escape: wrap if it contains comma, quote, or newline
+      return (s.includes(',') || s.includes('"') || s.includes('\n'))
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
     });
-    
-    return content;
-  }
+
+    // Skip completely empty rows
+    if (escaped.some(cell => cell !== '')) {
+      rows.push(escaped.join(','));
+    }
+  });
+
+  return rows.join('\n');
+}
 
   private static async processCSV(buffer: Buffer): Promise<string> {
     return buffer.toString('utf-8');

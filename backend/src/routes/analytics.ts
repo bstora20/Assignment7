@@ -162,7 +162,7 @@ router.get('/dashboard', authenticate, [
   
   const topQuestions = Object.entries(questionCounts)
     .map(([question, count]) => ({ question, count }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => Number(b.count) - Number(a.count))
     .slice(0, 10);
 
   res.json({
@@ -354,7 +354,7 @@ router.get('/:assistantId', authenticate, [
   
   const topQuestions = Object.entries(questionCounts)
     .map(([question, count]) => ({ question, count }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => Number(b.count) - Number(a.count))
     .slice(0, 15);
 
   res.json({
@@ -540,7 +540,7 @@ function aggregateQuestions(questions: any[]): any[] {
   
   return Object.entries(questionCounts)
     .map(([question, count]) => ({ question, count }))
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => Number(b.count) - Number(a.count));
 }
 
 export default router;

@@ -300,7 +300,7 @@ router.get('/:assistantId/templates', authenticate, [
 
   const commonQuestions = Object.entries(questionCounts)
     .map(([question, count]) => ({ question, count }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => Number(b.count) - Number(a.count))
     .slice(0, 20);
 
   // Default test templates

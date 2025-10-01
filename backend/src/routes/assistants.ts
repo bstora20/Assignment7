@@ -307,7 +307,7 @@ router.get('/:id/analytics', authenticate, [
   
   const topQuestions = Object.entries(questionCounts)
     .map(([question, count]) => ({ question, count }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) =>  Number(b.count) - Number(a.count))
     .slice(0, 10);
 
   res.json({

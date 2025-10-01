@@ -2,8 +2,10 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/assistants/[id]": "pages/assistants/[id].js",
   "/": "pages/index.js",
-  "/settings": "pages/settings.js",
-  "/auth/login": "pages/auth/login.js"
+  "/assistants/new": "pages/assistants/new.js",
+  "/assistants": "pages/assistants.js",
+  "/analytics": "pages/analytics.js",
+  "/tests": "pages/tests.js",
+  "/settings": "pages/settings.js"
 }
